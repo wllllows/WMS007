@@ -1,0 +1,47 @@
+import { useEffect, useState } from 'react';
+import { Table, Button, Select, Space, message, Tag } from 'antd';
+import { CheckCircleOutlined } from '@ant-design/icons';
+import { getWorkOrders, completeWorkOrder } from '../services/orderService';
+import type { WorkOrder } from '../types';
+
+export default function WorkOrders() {
+  const [data, setData] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<string | undefined>(undefined);
+
+  const fetch = (p = 1) => {
+    setLoading(true);
+    getWorkOrders({ page: p, status: statusFilter }).then(res => { setData(res.data); setTotal(res.total); setPage(p); })
+      .catch(()=>message.error('加载失败')).finally(() => setLoading(false));
+  };
+  useEffect(() => { fetch(); }, [statusFilter]);
+
+  const handleComplete = async (id: string) => {
+    try { await completeWorkOrder(id); message.success('工单已完工'); fetch(page); }
+    catch (err: any) { message.error('完工失败: '+(err?.response?.data?.detail||err?.message||'')); }
+  };
+
+  const columns = [
+    { title: '工单号', dataIndex: 'work_order_id', width: 160 },
+    { title: '工单类型', dataIndex: 'work_order_type', width: 100 },
+    { title: '开工时间', dataIndex: 'start_time', width: 180, render: (v: string) => new Date(v).toLocaleString() },
+    { title: '状态', dataIndex: 'status', width: 100, render: (v: string) => v === 'completed' ? <Tag color="green">已完工</Tag> : <Tag color="blue">{v}</Tag> },
+    { title: '下达日期', dataIndex: 'issue_date', width: 120 },
+    { title: '耗材说明', dataIndex: 'consumables', width: 200, ellipsis: true },
+    { title: '操作', width: 120, render: (_: any, r: WorkOrder) => (
+      r.status !== 'completed' && <Button size="small" type="primary" icon={<CheckCircleOutlined />} onClick={() => handleComplete(r.work_order_id)}>完工</Button>
+    )},
+  ];
+
+  return (
+    <div>
+      <Space style={{ marginBottom: 16 }}>
+        <Select placeholder="筛选状态" allowClear style={{ width: 150 }} onChange={v => setStatusFilter(v)}
+          options={[{ value: 'completed', label: '已完工' }, { value: 'in_progress', label: '进行中' }, { value: 'pending', label: '待开工' }]} />
+      </Space>
+      <Table columns={columns} dataSource={data} rowKey="work_order_id" loading={loading} pagination={{ current: page, total, pageSize: 20, onChange: p => fetch(p) }} />
+    </div>
+  );
+}
