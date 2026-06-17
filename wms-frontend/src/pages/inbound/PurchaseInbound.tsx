@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, message, Tag } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, CopyOutlined } from '@ant-design/icons';
 import { getPurchaseOrders, createPurchaseOrder } from '../../services/orderService';
+import { copyPurchaseOrder } from '../../services/dbDemoService';
 import type { PurchaseOrder } from '../../types';
 
 export default function PurchaseInbound() {
@@ -20,6 +21,12 @@ export default function PurchaseInbound() {
   };
   useEffect(() => { fetch(); }, []);
 
+  const handleCopy = async (sourceId: string) => {
+    const newId = sourceId + '-COPY';
+    try { await copyPurchaseOrder(sourceId, newId); message.success(`复制成功！新订单号: ${newId}`); fetch(page); }
+    catch (err: any) { message.error('复制失败: '+(err?.response?.data?.detail||err?.message||'')); }
+  };
+
   const handleSave = async () => {
     try { const values = await form.validateFields(); setSaving(true);
       await createPurchaseOrder(values); message.success('采购订单创建成功');
@@ -36,6 +43,7 @@ export default function PurchaseInbound() {
     { title: '发货', dataIndex: 'shipped', width: 100, render: (v: boolean) => <Tag color={v ? 'green' : 'orange'}>{v ? '已发货' : '未发货'}</Tag> },
     { title: '采购员', dataIndex: 'purchaser_employee_id', width: 130 },
     { title: '付款单号', dataIndex: 'payment_id', width: 160 },
+    { title: '操作', width: 100, render: (_:any, r:PurchaseOrder) => <Button size="small" icon={<CopyOutlined />} onClick={() => handleCopy(r.purchase_order_id)}>复制</Button> },
   ];
 
   return (

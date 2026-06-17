@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, Select, Space, message, Popconfirm } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, PhoneOutlined } from '@ant-design/icons';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee } from '../../services/employeeService';
+import { updateEmployeeContact } from '../../services/dbDemoService';
 import type { Employee } from '../../types';
 
 export default function Employees() {
@@ -14,6 +15,9 @@ export default function Employees() {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form] = Form.useForm();
   const [search, setSearch] = useState('');
+  const [batchModalOpen, setBatchModalOpen] = useState(false);
+  const [batchForm] = Form.useForm();
+  const [batcing, setBatcing] = useState(false);
 
   const fetch = (p = 1, keyword = search) => {
     setLoading(true);
@@ -31,6 +35,17 @@ export default function Employees() {
       setModalOpen(false); setEditing(null); form.resetFields(); fetch(page);
     } catch (err: any) { if (!err?.errorFields) message.error('操作失败: '+(err?.response?.data?.detail||err?.message||'')); }
     finally { setSaving(false); }
+  };
+
+  const handleBatchUpdate = async () => {
+    try {
+      const vals = await batchForm.validateFields();
+      setBatcing(true);
+      const res = await updateEmployeeContact(vals.old_phone, vals.new_phone);
+      message.success(`批量更新完成！共更新 ${res.updated_count} 条记录`);
+      setBatchModalOpen(false); batchForm.resetFields(); fetch(page);
+    } catch (err: any) { if (!err?.errorFields) message.error('更新失败: '+(err?.response?.data?.detail||err?.message||'')); }
+    finally { setBatcing(false); }
   };
 
   const columns = [
@@ -53,6 +68,7 @@ export default function Employees() {
       <Space style={{ marginBottom: 16 }}>
         <Input.Search placeholder="搜索姓名" allowClear onSearch={v => { setSearch(v); fetch(1, v); }} style={{ width: 300 }} />
         <Button type="primary" icon={<PlusOutlined />} onClick={() => { setEditing(null); form.resetFields(); setModalOpen(true); }}>新增员工</Button>
+        <Button icon={<PhoneOutlined />} onClick={() => { batchForm.resetFields(); setBatchModalOpen(true); }}>批量换号</Button>
       </Space>
       <Table columns={columns} dataSource={data} rowKey="employee_id" loading={loading} pagination={{ current: page, total, pageSize: 20, onChange: p => fetch(p) }} />
       <Modal title={editing ? '编辑员工' : '新增员工'} open={modalOpen} onOk={handleSave} confirmLoading={saving} onCancel={() => { setModalOpen(false); setEditing(null); form.resetFields(); }}>
@@ -63,6 +79,12 @@ export default function Employees() {
             <Select options={[{ value: '采购员', label: '采购员' }, { value: '销售员', label: '销售员' }, { value: '仓库管理员', label: '仓库管理员' }, { value: '车间负责人', label: '车间负责人' }, { value: '管理员', label: '管理员' }]} />
           </Form.Item>
           <Form.Item name="contact_phone" label="联系电话" rules={[{ required: true }]}><Input /></Form.Item>
+        </Form>
+      </Modal>
+      <Modal title="批量更新员工联系方式" open={batchModalOpen} onOk={handleBatchUpdate} confirmLoading={batcing} onCancel={() => { setBatchModalOpen(false); batchForm.resetFields(); }}>
+        <Form form={batchForm} layout="vertical">
+          <Form.Item name="old_phone" label="原电话号码" rules={[{ required: true }]}><Input placeholder="输入要替换的旧号码" /></Form.Item>
+          <Form.Item name="new_phone" label="新电话号码" rules={[{ required: true }]}><Input placeholder="输入新号码" /></Form.Item>
         </Form>
       </Modal>
     </div>

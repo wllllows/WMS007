@@ -1,10 +1,16 @@
-"""补充业务接口：退货入库、外协入库、生产退料、外协出库、生产领料"""
-from fastapi import APIRouter, HTTPException
+"""扩展业务接口：补充业务 + 数据库演示 SP/视图"""
+from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import text
 from pydantic import BaseModel
 from app.database import SessionLocal
 
 router = APIRouter()
+
+
+def get_db():
+    db = SessionLocal()
+    try: yield db
+    finally: db.close()
 
 
 class ReturnInboundData(BaseModel):
@@ -45,12 +51,6 @@ class MaterialPickData(BaseModel):
     workshop_id: str
     applicant: str
     purpose: str = ""
-
-
-def get_db():
-    db = SessionLocal()
-    try: yield db
-    finally: db.close()
 
 
 @router.put("/purchase-orders/{order_id}/return")
@@ -151,3 +151,114 @@ def create_material_pick(data: MaterialPickData):
         return {"status": "success", "message": "生产领料完成"}
     except HTTPException: raise
     except Exception as e: db.rollback(); raise HTTPException(status_code=400, detail=str(e))
+
+# ===== 数据库演示 SP 和视图接口 =====
+@router.post("/sp/copy-purchase-order")
+def call_sp_copy_purchase_order(source: str = Query(...), new_id: str = Query(...)):
+    db = next(get_db())
+    try:
+        db.execute(text("CALL sp_copy_purchase_order(:src, :new, @r)"), {"src": source, "new": new_id})
+        db.commit()
+        result = db.execute(text("SELECT @r")).scalar()
+        return {"status": "success", "result": result}
+    except Exception as e: db.rollback(); raise HTTPException(400, detail=str(e))
+
+
+@router.post("/sp/delete-expired-workorders")
+def call_sp_delete_expired_workorders(days: int = Query(180)):
+    db = next(get_db())
+    try:
+        db.execute(text("CALL sp_delete_expired_workorders(:d, @c)"), {"d": days})
+        db.commit()
+        cnt = db.execute(text("SELECT @c")).scalar()
+        return {"status": "success", "deleted_count": cnt}
+    except Exception as e: db.rollback(); raise HTTPException(400, detail=str(e))
+
+
+@router.post("/sp/update-employee-contact")
+def call_sp_update_employee_contact(old_phone: str = Query(...), new_phone: str = Query(...)):
+    db = next(get_db())
+    try:
+        db.execute(text("CALL sp_update_employee_contact(:old, :new, @c)"), {"old": old_phone, "new": new_phone})
+        db.commit()
+        cnt = db.execute(text("SELECT @c")).scalar()
+        return {"status": "success", "updated_count": cnt}
+    except Exception as e: db.rollback(); raise HTTPException(400, detail=str(e))
+
+
+@router.get("/sp/material-outsourcing-summary")
+def call_sp_material_outsourcing_summary(material_id: str = Query(...)):
+    db = next(get_db())
+    db.execute(text("CALL sp_material_outsourcing_summary(:mid, @s)"), {"mid": material_id})
+    db.commit()
+    result = db.execute(text("SELECT @s")).scalar()
+    return {"data": result}
+
+
+@router.get("/sp/workshop-production-report")
+def call_sp_workshop_production_report(workshop_id: str = Query(...)):
+    db = next(get_db())
+    db.execute(text("CALL sp_workshop_production_report(:wid, @r)"), {"wid": workshop_id})
+    db.commit()
+    result = db.execute(text("SELECT @r")).scalar()
+    return {"data": result}
+
+
+# ===== 视图接口 =====
+
+@router.get("/view/employee-performance")
+def get_employee_performance():
+    db = next(get_db())
+    rows = db.execute(text("SELECT * FROM employee_work_order_performance_view")).fetchall()
+    return {"data": [dict(r._mapping) for r in rows]}
+
+
+@router.get("/view/product-trace")
+def get_product_trace():
+    db = next(get_db())
+    rows = db.execute(text("SELECT * FROM finished_product_work_order_trace_view")).fetchall()
+    return {"data": [dict(r._mapping) for r in rows]}
+
+
+@router.get("/view/outsourcing-material-detail")
+def get_outsourcing_material_detail():
+    db = next(get_db())
+    rows = db.execute(text("SELECT * FROM outsourcing_order_raw_material_view")).fetchall()
+    return {"data": [dict(r._mapping) for r in rows]}
+
+
+@router.get("/view/payment-purchase-summary")
+def get_payment_purchase_summary():
+    db = next(get_db())
+    rows = db.execute(text("SELECT * FROM payment_purchase_summary_view")).fetchall()
+    return {"data": [dict(r._mapping) for r in rows]}
+
+
+@router.get("/view/material-outsourcing")
+def get_material_outsourcing():
+    db = next(get_db())
+    rows = db.execute(text("SELECT * FROM raw_material_outsourcing_view")).fetchall()
+    return {"data": [dict(r._mapping) for r in rows]}
+
+# ===== SP: 过期工单清理 =====
+@router.post("/sp/delete-expired-workorders")
+def call_sp_delete_expired_workorders(days: int = Query(180)):
+    db = next(get_db())
+    try:
+        db.execute(text("CALL sp_delete_expired_workorders(:d, @c)"), {"d": days})
+        db.commit()
+        cnt = db.execute(text("SELECT @c")).scalar()
+        return {"status": "success", "deleted_count": cnt}
+    except Exception as e: db.rollback(); raise HTTPException(400, detail=str(e))
+
+
+# ===== SP: 批量更新员工联系方式 =====
+@router.post("/sp/update-employee-contact")
+def call_sp_update_employee_contact(old_phone: str = Query(...), new_phone: str = Query(...)):
+    db = next(get_db())
+    try:
+        db.execute(text("CALL sp_update_employee_contact(:old, :new, @c)"), {"old": old_phone, "new": new_phone})
+        db.commit()
+        cnt = db.execute(text("SELECT @c")).scalar()
+        return {"status": "success", "updated_count": cnt}
+    except Exception as e: db.rollback(); raise HTTPException(400, detail=str(e))

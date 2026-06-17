@@ -17,3 +17,5 @@ export async function settleOutsourcingOrder(id: string, final_amount: number) {
 
 export async function getTransferOrders(params?: any) { const { data } = await api.get<PaginatedResponse<TransferOrder>>('/transfer-orders/', { params }); return data; }
 export async function createTransferOrder(body: any) { const { data } = await api.post('/transfer-orders/', body); return data; }
+export async function deleteWorkOrder(id: string) { const { data } = await api.delete(`/work-orders/${id}`); return data; }
+export async function deleteTransferOrder(id: string) { const { data } = await api.delete(`/transfer-orders/${id}`); return data; }

@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Row, Col, Card, Statistic, Table, Spin, Alert, Progress, Tag } from 'antd';
 import { ShoppingCartOutlined, ShoppingOutlined, ScheduleOutlined, DollarOutlined } from '@ant-design/icons';
 import { getDashboardStats } from '../services/dashboardService';
+import { useNavigate } from 'react-router-dom';
 import { getPurchaseOrders, getWorkOrders } from '../services/orderService';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [stats, setStats] = useState<any>(null);
   const [recentPO, setRecentPO] = useState<any[]>([]);
   const [recentWO, setRecentWO] = useState<any[]>([]);
@@ -106,8 +108,8 @@ export default function Dashboard() {
         </Col>
       </Row>
       <Row gutter={[16,16]}>
-        <Col xs={24} lg={12}><Card title="最近采购订单" extra={<a onClick={()=>window.location.hash='/inbound/purchase'}>查看全部</a>}><Table columns={poCols} dataSource={recentPO.map((p:any,i:number)=>({...p,key:i}))} pagination={false} size="small" /></Card></Col>
-        <Col xs={24} lg={12}><Card title="最近工单" extra={<a onClick={()=>window.location.hash='/work-orders'}>查看全部</a>}><Table columns={woCols} dataSource={recentWO.map((w:any,i:number)=>({...w,key:i}))} pagination={false} size="small" /></Card></Col>
+        <Col xs={24} lg={12}><Card title="最近采购订单" extra={<a onClick={() => navigate('/inbound/purchase')}>查看全部</a>}><Table columns={poCols} dataSource={recentPO.map((p:any,i:number)=>({...p,key:i}))} pagination={false} size="small" /></Card></Col>
+        <Col xs={24} lg={12}><Card title="最近工单" extra={<a onClick={() => navigate('/work-orders')}>查看全部</a>}><Table columns={woCols} dataSource={recentWO.map((w:any,i:number)=>({...w,key:i}))} pagination={false} size="small" /></Card></Col>
       </Row>
     </div>
   );

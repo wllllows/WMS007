@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, message } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
-import { getTransferOrders, createTransferOrder } from '../../services/orderService';
+import { Table, Button, Modal, Form, Input, InputNumber, message, Popconfirm, Space } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { getTransferOrders, createTransferOrder, deleteTransferOrder } from '../../services/orderService';
 import type { TransferOrder } from '../../types';
 
 export default function TransferManagement() {
@@ -20,6 +20,11 @@ export default function TransferManagement() {
   };
   useEffect(() => { fetch(); }, []);
 
+  const handleDelete = async (id: string) => {
+    try { await deleteTransferOrder(id); message.success('调拨单已删除（触发器已清理关联并记录日志）'); fetch(page); }
+    catch (err: any) { message.error('删除失败: '+(err?.response?.data?.detail||err?.message||'')); }
+  };
+
   const handleSave = async () => {
     try { const values = await form.validateFields(); setSaving(true);
       await createTransferOrder(values); message.success('调拨单创建成功');
@@ -29,12 +34,17 @@ export default function TransferManagement() {
   };
 
   const columns = [
-    { title: '调拨单号', dataIndex: 'transfer_order_id', width: 160 },
-    { title: '调拨单位', dataIndex: 'transfer_unit', width: 140 },
-    { title: '日期', dataIndex: 'transfer_date', width: 120 },
-    { title: '位置', dataIndex: 'location', width: 200 },
-    { title: '数量', dataIndex: 'quantity', width: 80 },
-    { title: '车间编号', dataIndex: 'workshop_id', width: 130 },
+    { title: '调拨单号', dataIndex: 'transfer_order_id', width: 150 },
+    { title: '调拨单位', dataIndex: 'transfer_unit', width: 120 },
+    { title: '日期', dataIndex: 'transfer_date', width: 110 },
+    { title: '位置', dataIndex: 'location', width: 180 },
+    { title: '数量', dataIndex: 'quantity', width: 70 },
+    { title: '车间编号', dataIndex: 'workshop_id', width: 110 },
+    { title: '操作', width: 100, render: (_: any, r: TransferOrder) => (
+      <Popconfirm title="删除调拨单将清理原料关联，确定？" onConfirm={() => handleDelete(r.transfer_order_id)}>
+        <Button size="small" danger icon={<DeleteOutlined />}>删除</Button>
+      </Popconfirm>
+    )},
   ];
 
   return (

@@ -9,6 +9,16 @@ from app.services.transfer_service import transfer_material
 router = APIRouter()
 
 
+@router.delete("/{transfer_order_id}")
+def delete_transfer_order(transfer_order_id: str, db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    to = db.query(TransferOrder).filter(TransferOrder.transfer_order_id == transfer_order_id).first()
+    if not to: raise HTTPException(status_code=404, detail="调拨单不存在")
+    db.execute(text("DELETE FROM transfer_order WHERE transfer_order_id = :id"), {"id": transfer_order_id})
+    db.commit()
+    return {"status": "deleted"}
+
+
 @router.get("/")
 def list_transfer_orders(
     workshop_id: str = Query(None),

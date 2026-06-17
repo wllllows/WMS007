@@ -25,6 +25,17 @@ def list_work_orders(
             "total": total, "page": page, "page_size": page_size}
 
 
+@router.delete("/{work_order_id}")
+def delete_work_order(work_order_id: str, db: Session = Depends(get_db)):
+    from sqlalchemy import text
+    wo = db.query(WorkOrder).filter(WorkOrder.work_order_id == work_order_id).first()
+    if not wo: raise HTTPException(status_code=404, detail="工单不存在")
+    # 用原生SQL删除，让MySQL的ON DELETE CASCADE和触发器正常工作
+    db.execute(text("DELETE FROM work_order WHERE work_order_id = :id"), {"id": work_order_id})
+    db.commit()
+    return {"status": "deleted"}
+
+
 @router.get("/{work_order_id}")
 def get_work_order_detail(work_order_id: str, db: Session = Depends(get_db)):
     wo = db.query(WorkOrder).filter(WorkOrder.work_order_id == work_order_id).first()

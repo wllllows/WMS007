@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.routers import (
     employees, materials, warehouses, suppliers, workshops,
     purchase_orders, sales_orders, work_orders,
-    outsourcing_orders, transfer_orders, inventory, dashboard, auth, business_ops
+    outsourcing_orders, transfer_orders, inventory, dashboard, auth, extended
 )
 
 app = FastAPI(title="仓库管理系统 API", version="1.0.0")
@@ -46,7 +46,7 @@ app.include_router(outsourcing_orders.router, prefix="/api/outsourcing-orders", 
 app.include_router(transfer_orders.router, prefix="/api/transfer-orders", tags=["调拨管理"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["库存管理"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["仪表盘"])
-app.include_router(business_ops.router, prefix="/api", tags=["业务操作"])
+app.include_router(extended.router, prefix="/api", tags=["扩展业务"])
 
 
 @app.get("/")
