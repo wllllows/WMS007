@@ -17,10 +17,18 @@ const allMenuItems = [
     { key: '/basic-data/suppliers', label: '供应商管理' }, { key: '/basic-data/workshops', label: '车间管理' },
     { key: '/basic-data/employees', label: '员工管理' },
   ]},
-  { key: 'inbound', icon: <InboxOutlined />, label: '入库管理', children: [{ key: '/inbound/purchase', label: '采购入库' }] },
-  { key: 'outbound', icon: <ExportOutlined />, label: '出库管理', children: [{ key: '/outbound/sales', label: '销售出库' }] },
+  { key: 'inbound', icon: <InboxOutlined />, label: '入库管理', children: [
+    { key: '/inbound/purchase', label: '采购入库' }, { key: '/inbound/return', label: '退货入库' },
+    { key: '/inbound/outsourcing', label: '外协入库' }, { key: '/inbound/production-return', label: '生产退料' },
+  ]},
+  { key: 'outbound', icon: <ExportOutlined />, label: '出库管理', children: [
+    { key: '/outbound/sales', label: '销售出库' }, { key: '/outbound/outsourcing', label: '外协出库' },
+    { key: '/outbound/material', label: '生产领料' },
+  ]},
   { key: 'work-orders', icon: <ScheduleOutlined />, label: '工单管理' },
-  { key: 'outsourcing', icon: <ToolOutlined />, label: '外协作业', children: [{ key: '/outsourcing/orders', label: '外协订单' }] },
+  { key: 'outsourcing', icon: <ToolOutlined />, label: '外协作业', children: [
+    { key: '/outsourcing/orders', label: '外协订单' }, { key: '/outsourcing/progress', label: '进度监控' },
+  ]},
   { key: 'inventory', icon: <AppstoreOutlined />, label: '库存管理', children: [
     { key: '/inventory/query', label: '库存查询' }, { key: '/inventory/transfer', label: '调拨管理' },
   ]},
@@ -52,9 +60,11 @@ export default function MainLayout() {
   return (
     <Layout style={{ height: '100vh', overflow: 'hidden' }}>
       <Sider trigger={null} collapsible collapsed={collapsed} width={220} style={{ overflow: 'auto', height: '100vh', position: 'fixed', left: 0, top: 0, bottom: 0, zIndex: 10 }}>
-        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? 0 : '0 20px', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
-          <BankOutlined style={{ fontSize: 22, color: '#fff' }} />
-          {!collapsed && <span style={{ marginLeft: 10, color: '#fff', fontSize: 15, fontWeight: 600 }}>仓库管理系统</span>}
+        <div style={{ height: 64, display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start', padding: collapsed ? 0 : '0 20px', cursor: 'pointer', borderBottom: '1px solid rgba(255,255,255,0.06)' }} onClick={() => navigate('/dashboard')}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <BankOutlined style={{ fontSize: 18, color: '#fff' }} />
+          </div>
+          {!collapsed && <span style={{ marginLeft: 10, color: '#f1f5f9', fontSize: 15, fontWeight: 650, letterSpacing: 1 }}>仓库管理系统</span>}
         </div>
         <Menu mode="inline" theme="dark" selectedKeys={[findSelectedKey()]} defaultOpenKeys={menus.filter(m => m.children).map(m => m.key)} items={menus} onClick={({ key }) => navigate(key.startsWith('/') ? key : `/${key}`)} />
       </Sider>
@@ -65,8 +75,8 @@ export default function MainLayout() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}><UserOutlined style={{ fontSize: 16 }} /><span>{name}</span></div>
           </Dropdown>
         </Header>
-        <Content style={{ padding: 24, overflow: 'auto', height: 'calc(100vh - 64px)', background: '#f5f5f5' }}>
-          <div style={{ background: '#fff', borderRadius: 8, padding: 24, minHeight: '100%' }}><Outlet /></div>
+        <Content style={{ padding: 24, overflow: 'auto', height: 'calc(100vh - 64px)', background: '#f8fafc' }}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, minHeight: '100%', boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}><Outlet /></div>
         </Content>
       </Layout>
     </Layout>

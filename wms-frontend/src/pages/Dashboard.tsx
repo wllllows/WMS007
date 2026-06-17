@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Row, Col, Card, Statistic, Table, Spin, Alert, Progress, Tag } from 'antd';
-import { ShoppingCartOutlined, ShoppingOutlined, ScheduleOutlined, DollarOutlined, ArrowUpOutlined } from '@ant-design/icons';
+import { ShoppingCartOutlined, ShoppingOutlined, ScheduleOutlined, DollarOutlined } from '@ant-design/icons';
 import { getDashboardStats } from '../services/dashboardService';
 import { getPurchaseOrders, getWorkOrders } from '../services/orderService';
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
   const woCols = [
     { title: '工单号', dataIndex: 'work_order_id', width: 130 },
     { title: '类型', dataIndex: 'work_order_type', width: 80 },
-    { title: '状态', dataIndex: 'status', render: (v:string) => <Tag color={v==='completed'?'green':'blue'}>{v}</Tag> },
+    { title: '状态', dataIndex: 'status', render: (v:string) => { const m: Record<string,{color:string;text:string}> = {completed:{color:'green',text:'已完工'},in_progress:{color:'blue',text:'进行中'},pending:{color:'orange',text:'待开工'}}; const t=m[v]||{color:'default',text:v}; return <Tag color={t.color}>{t.text}</Tag>; } },
     { title: '下达日期', dataIndex: 'issue_date' },
   ];
 
@@ -42,12 +42,40 @@ export default function Dashboard() {
 
   return (
     <div>
-      <h2 style={{ marginBottom: 24, fontSize: 20, fontWeight: 600 }}>系统首页</h2>
+      <h2 className="page-title">系统首页</h2>
       <Row gutter={[16,16]} style={{ marginBottom: 24 }}>
-        <Col xs={24} sm={12} lg={6}><Card hoverable><Statistic title="采购订单" value={stats.purchase_order_count} prefix={<ShoppingCartOutlined style={{ color: '#1677ff' }} />} suffix={<span style={{ fontSize: 14, color: '#52c41a' }}><ArrowUpOutlined />12%</span>} /></Card></Col>
-        <Col xs={24} sm={12} lg={6}><Card hoverable><Statistic title="销售订单" value={stats.sales_order_count} prefix={<ShoppingOutlined style={{ color: '#52c41a' }} />} /></Card></Col>
-        <Col xs={24} sm={12} lg={6}><Card hoverable><Statistic title="进行中工单" value={stats.work_order_in_progress} prefix={<ScheduleOutlined style={{ color: '#fa8c16' }} />} /></Card></Col>
-        <Col xs={24} sm={12} lg={6}><Card hoverable><Statistic title="销售总收入" value={stats.total_revenue} precision={2} prefix={<DollarOutlined style={{ color: '#722ed1' }} />} suffix="元" /></Card></Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="dashboard-stat-icon" style={{ background: '#eff6ff', color: '#2563eb' }}><ShoppingCartOutlined /></div>
+              <Statistic title="采购订单" value={stats.purchase_order_count} />
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="dashboard-stat-icon" style={{ background: '#ecfdf5', color: '#10b981' }}><ShoppingOutlined /></div>
+              <Statistic title="销售订单" value={stats.sales_order_count} />
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="dashboard-stat-icon" style={{ background: '#fffbeb', color: '#f59e0b' }}><ScheduleOutlined /></div>
+              <Statistic title="进行中工单" value={stats.work_order_in_progress} />
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card hoverable>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className="dashboard-stat-icon" style={{ background: '#f5f3ff', color: '#7c3aed' }}><DollarOutlined /></div>
+              <Statistic title="销售总收入" value={stats.total_revenue} precision={2} suffix="元" />
+            </div>
+          </Card>
+        </Col>
       </Row>
       <Row gutter={[16,16]} style={{ marginBottom: 24 }}>
         <Col xs={24} lg={16}>

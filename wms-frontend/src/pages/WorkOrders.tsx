@@ -27,7 +27,11 @@ export default function WorkOrders() {
     { title: '工单号', dataIndex: 'work_order_id', width: 160 },
     { title: '工单类型', dataIndex: 'work_order_type', width: 100 },
     { title: '开工时间', dataIndex: 'start_time', width: 180, render: (v: string) => new Date(v).toLocaleString() },
-    { title: '状态', dataIndex: 'status', width: 100, render: (v: string) => v === 'completed' ? <Tag color="green">已完工</Tag> : <Tag color="blue">{v}</Tag> },
+    { title: '状态', dataIndex: 'status', width: 100, render: (v: string) => {
+      const m: Record<string, { color: string; text: string }> = { completed: { color: 'green', text: '已完工' }, in_progress: { color: 'blue', text: '进行中' }, pending: { color: 'orange', text: '待开工' } };
+      const t = m[v] || { color: 'default', text: v };
+      return <Tag color={t.color}>{t.text}</Tag>;
+    } },
     { title: '下达日期', dataIndex: 'issue_date', width: 120 },
     { title: '耗材说明', dataIndex: 'consumables', width: 200, ellipsis: true },
     { title: '操作', width: 120, render: (_: any, r: WorkOrder) => (

@@ -1,12 +1,29 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from app.routers import (
     employees, materials, warehouses, suppliers, workshops,
     purchase_orders, sales_orders, work_orders,
-    outsourcing_orders, transfer_orders, inventory, dashboard, auth
+    outsourcing_orders, transfer_orders, inventory, dashboard, auth, business_ops
 )
 
 app = FastAPI(title="仓库管理系统 API", version="1.0.0")
+
+
+@app.exception_handler(IntegrityError)
+async def integrity_error_handler(request: Request, exc: IntegrityError):
+    msg = str(exc.orig) if exc.orig else str(exc)
+    if "Duplicate entry" in msg:
+        return JSONResponse(status_code=400, content={"detail": "数据已存在，请检查编号是否重复"})
+    if "foreign key constraint" in msg.lower() or "a foreign key constraint fails" in msg.lower():
+        return JSONResponse(status_code=400, content={"detail": "关联数据不存在，请检查引用的编号是否正确"})
+    return JSONResponse(status_code=400, content={"detail": f"数据完整性错误: {msg}"})
+
+
+@app.exception_handler(Exception)
+async def general_error_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={"detail": f"服务器错误: {str(exc)}"})
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,6 +46,7 @@ app.include_router(outsourcing_orders.router, prefix="/api/outsourcing-orders", 
 app.include_router(transfer_orders.router, prefix="/api/transfer-orders", tags=["调拨管理"])
 app.include_router(inventory.router, prefix="/api/inventory", tags=["库存管理"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["仪表盘"])
+app.include_router(business_ops.router, prefix="/api", tags=["业务操作"])
 
 
 @app.get("/")

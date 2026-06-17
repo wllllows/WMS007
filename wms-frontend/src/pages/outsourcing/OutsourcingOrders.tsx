@@ -44,7 +44,7 @@ export default function OutsourcingOrders() {
 
   const columns = [
     { title: '外协订单号', dataIndex: 'outsourcing_order_id', width: 160 },
-    { title: '状态', dataIndex: 'order_status', width: 100, render: (v: string) => <Tag color={statusColor[v] || 'default'}>{v}</Tag> },
+    { title: '状态', dataIndex: 'order_status', width: 100, render: (v: string) => { const sm: Record<string,{color:string;text:string}> = {completed:{color:'green',text:'已完工'},settled:{color:'purple',text:'已结算'},processing:{color:'blue',text:'加工中'},pending:{color:'orange',text:'待加工'}}; const t=sm[v]||{color:'default',text:v}; return <Tag color={t.color}>{t.text}</Tag>; } },
     { title: '金额', dataIndex: 'order_amount', width: 100, render: (v: number) => `¥${v}` },
     { title: '订单日期', dataIndex: 'order_date', width: 120 },
     { title: '厂商编号', dataIndex: 'supplier_id', width: 130 },
