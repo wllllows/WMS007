@@ -3,8 +3,31 @@
 -- ============================================
 USE production_purchase_sales_management;
 
--- SP1: 新增采购订单并自动创建付款单（已存在，此处跳过）
--- sp_create_purchase_order
+-- SP1: 新增采购订单并自动创建付款单
+DELIMITER $$
+CREATE PROCEDURE IF NOT EXISTS sp_create_purchase_order(
+    IN p_order_no VARCHAR(30),
+    IN p_total_qty INT UNSIGNED,
+    IN p_unit_price DECIMAL(12,2),
+    IN p_employee_id VARCHAR(30),
+    OUT p_result VARCHAR(100)
+)
+BEGIN
+    DECLARE v_payment_id VARCHAR(30);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_result = 'failed';
+    END;
+    START TRANSACTION;
+    SET v_payment_id = CONCAT('PAY', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 1000), 3, '0'));
+    INSERT INTO payment_status (payment_id, paid_amount, unpaid_amount) VALUES (v_payment_id, 0.00, 0.00);
+    INSERT INTO purchase_order (purchase_order_id, total_quantity, order_time, shipped, unit_price, purchaser_employee_id, payment_id)
+    VALUES (p_order_no, p_total_qty, NOW(), FALSE, p_unit_price, p_employee_id, v_payment_id);
+    SET p_result = CONCAT('success, payment_id: ', v_payment_id);
+    COMMIT;
+END$$
+DELIMITER ;
 
 -- SP2: 工单完工自动更新状态 + 记录日志
 DELIMITER $$

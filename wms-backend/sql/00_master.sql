@@ -1,12 +1,19 @@
 -- ============================================
--- 仓库管理系统 完整数据库脚本（按顺序执行）
+-- 仓库管理系统 完整数据库脚本
+-- 按顺序执行：建库 → 建表 → 索引 → 视图 → 触发器 → 存储过程
+-- 执行方式：mysql -u root -p123456 < 00_master.sql
 -- ============================================
 
-CREATE DATABASE IF NOT EXISTS production_purchase_sales_management DEFAULT CHARACTER SET utf8mb4 DEFAULT COLLATE utf8mb4_0900_ai_ci;
+CREATE DATABASE IF NOT EXISTS production_purchase_sales_management
+  DEFAULT CHARACTER SET utf8mb4
+  DEFAULT COLLATE utf8mb4_0900_ai_ci;
+
 USE production_purchase_sales_management;
 
--- ====== 01_create_tables.sql ======
-USE production_purchase_sales_management;
+
+-- ========================================
+-- 01_create_tables.sql
+-- ========================================
 
 -- 1. employee
 CREATE TABLE employee (
@@ -244,7 +251,9 @@ CREATE TABLE material_migration_log (
   PRIMARY KEY (log_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ====== 04_create_indexes.sql ======
+-- ========================================
+-- 04_create_indexes.sql
+-- ========================================
 -- 采购订单
 CREATE INDEX idx_po_employee ON purchase_order(purchaser_employee_id);
 CREATE INDEX idx_po_payment ON purchase_order(payment_id);
@@ -300,7 +309,9 @@ CREATE INDEX idx_wo_prod_prod ON work_order_finished_product(finished_product_id
 CREATE INDEX idx_out_mat_mat ON outsourcing_order_raw_material(raw_material_id);
 CREATE INDEX idx_trans_mat_mat ON transfer_order_raw_material(raw_material_id);
 
--- ====== 05_create_views.sql ======
+-- ========================================
+-- 05_create_views.sql
+-- ========================================
 -- 视图1：采购订单执行情况
 CREATE OR REPLACE VIEW purchase_order_execution_view AS
 SELECT po.purchase_order_id, po.order_time, po.total_quantity, po.unit_price,
@@ -467,11 +478,10 @@ FROM outsourcing_order oo
 JOIN outsourcing_supplier os ON oo.supplier_id = os.supplier_id
 JOIN receipt_status rs ON oo.receipt_id = rs.receipt_id;
 
--- ====== 02_create_triggers.sql ======
--- ============================================
+-- ========================================
+-- 02_create_triggers.sql
+-- ========================================
 -- 仓库管理系统 — 12个触发器
--- ============================================
-USE production_purchase_sales_management;
 
 -- 触发器1: 采购订单插入后自动更新付款情况总金额
 DELIMITER $$
@@ -660,14 +670,36 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ====== 03_create_procedures.sql ======
--- ============================================
+-- ========================================
+-- 03_create_procedures.sql
+-- ========================================
 -- 仓库管理系统 — 存储过程（补充创建）
--- ============================================
-USE production_purchase_sales_management;
 
--- SP1: 新增采购订单并自动创建付款单（已存在，此处跳过）
--- sp_create_purchase_order
+-- SP1: 新增采购订单并自动创建付款单
+DELIMITER $$
+CREATE PROCEDURE IF NOT EXISTS sp_create_purchase_order(
+    IN p_order_no VARCHAR(30),
+    IN p_total_qty INT UNSIGNED,
+    IN p_unit_price DECIMAL(12,2),
+    IN p_employee_id VARCHAR(30),
+    OUT p_result VARCHAR(100)
+)
+BEGIN
+    DECLARE v_payment_id VARCHAR(30);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        SET p_result = 'failed';
+    END;
+    START TRANSACTION;
+    SET v_payment_id = CONCAT('PAY', DATE_FORMAT(NOW(), '%Y%m%d%H%i%s'), LPAD(FLOOR(RAND() * 1000), 3, '0'));
+    INSERT INTO payment_status (payment_id, paid_amount, unpaid_amount) VALUES (v_payment_id, 0.00, 0.00);
+    INSERT INTO purchase_order (purchase_order_id, total_quantity, order_time, shipped, unit_price, purchaser_employee_id, payment_id)
+    VALUES (p_order_no, p_total_qty, NOW(), FALSE, p_unit_price, p_employee_id, v_payment_id);
+    SET p_result = CONCAT('success, payment_id: ', v_payment_id);
+    COMMIT;
+END$$
+DELIMITER ;
 
 -- SP2: 工单完工自动更新状态 + 记录日志
 DELIMITER $$
@@ -879,7 +911,9 @@ BEGIN
 END$$
 DELIMITER ;
 
--- ====== 06_create_remaining_sp.sql ======
+-- ========================================
+-- 06_create_remaining_sp.sql
+-- ========================================
 -- 剩余的5个存储过程（文档12个，之前已创建7个）
 
 -- SP6: 批量删除过期工单
@@ -956,4 +990,3 @@ BEGIN
     COMMIT;
 END$$
 DELIMITER ;
-
