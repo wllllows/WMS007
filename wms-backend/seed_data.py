@@ -31,7 +31,8 @@ cur.executemany("INSERT INTO employee VALUES (%s,%s,%s,%s)", employees)
 # ========== 付款状态 & 收款状态 ==========
 payments = [(f'PAY{i:03d}', round(random.uniform(0, 50000), 2), round(random.uniform(0, 30000), 2)) for i in range(1, 31)]
 cur.executemany("INSERT INTO payment_status VALUES (%s,%s,%s)", payments)
-receipts = [(f'REC{i:03d}', round(random.uniform(0, 30000), 2), round(random.uniform(0, 15000), 2)) for i in range(1, 21)]
+receipts = [(f'REC{i:03d}', round(random.uniform(0, 30000), 2), round(random.uniform(0, 15000), 2)) for i in range(1, 21)] + \
+           [('REC021', 0, 8000)]  # C级厂商演示用
 cur.executemany("INSERT INTO receipt_status VALUES (%s,%s,%s)", receipts)
 
 # ========== 仓库 ==========
@@ -131,6 +132,7 @@ suppliers = [
     ('SUP006', '天工框架加工', '林老板', '13900010006', 'A级', '福建省莆田市仙游县'),
     ('SUP007', '益丰面料染整', '王主管', '13900010007', 'A级', '江苏省南通市通州区'),
     ('SUP008', '联达五金冲压', '李主管', '13900010008', 'B级', '广东省深圳市龙岗区'),
+    ('SUP009', '低质五金加工坊', '王老板', '13900010009', 'C级', '浙江省某县五金城'),
 ]
 cur.executemany("INSERT INTO outsourcing_supplier VALUES (%s,%s,%s,%s,%s,%s)", suppliers)
 
@@ -145,6 +147,9 @@ for i in range(1, 21):
     outsourcing_orders.append((oid, status, round(random.uniform(2000, 50000), 2),
                                orders_date.strftime('%Y-%m-%d'), sup[0], rec))
 cur.executemany("INSERT INTO outsourcing_order VALUES (%s,%s,%s,%s,%s,%s)", outsourcing_orders)
+
+# 额外加一条 C 级厂商的订单（演示触发器拦截用）
+cur.execute("INSERT INTO outsourcing_order VALUES ('OO0021', 'pending', 8000, CURDATE(), 'SUP009', 'REC021')")
 
 # ========== 调拨单 ==========
 transfer_orders = []
